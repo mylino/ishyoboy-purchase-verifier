@@ -64,6 +64,12 @@ if(!class_exists('AQ_Verifier')) {
 			$this->page 	= $slug;
 			$this->options 	= get_option($slug);
 			$this->apis = Array(
+				'ishyoboyshop' =>  Array(
+					'name' => __( 'IshYoBoyShop', 'a10e_av' ),
+					'url' => 'http://mvdev.ishyoboy.com/iybweb/?edd_action=check_license&license=%3$s&email=%4$s', // http://YOURSITE.com/?edd_action=check_license&item_name=EDD+Product+Name&license=cc22c1ec86304b36883440e2e84cddff&url=http://licensedsite.com
+					'api_info' => 'http://docs.easydigitaldownloads.com/article/384-software-licensing-api',
+					'help_img' => plugin_dir_url( $file ) . 'img/ishyoboyshop-item-purchase-code.png' // should be placed in the rood of the theme
+					                                   				),
 				'envato' => Array(
 					'name' => __( 'ThemeForest', 'a10e_av' ),
 					'url' => 'https://api.envato.com/v2/market/author/sale?code=%3$s', // http://marketplace.envato.com/api/edge/{USERNAME}/{APIKEY}/verify-purchase:{PURCHASE-CODE}.json
@@ -145,43 +151,46 @@ if(!class_exists('AQ_Verifier')) {
 					)
 				);
 
-				add_settings_field(
-					$marketplace_slug . '_marketplace_username',
-					$marketplace_data['name'] . ' ' . __( 'Username', 'a10e_av' ),
-					array($this, 'settings_field_input'),
-					$slug,
-					$slug,
-					array(
-						'id' 	=> $marketplace_slug . '_marketplace_username',
-						'desc' 	=> __('Case sensitive', 'a10e_av')
-					)
-				);
+				if ( 'ishyoboyshop' != $marketplace_slug ) {
 
-				// add option for themeforest - personal token
-				if ( 'envato' == $marketplace_slug ) {
 					add_settings_field(
-						$marketplace_slug . '_personal_token',
-						$marketplace_data['name'] . ' ' .  __( 'Personal Token', 'a10e_av' ),
-						array($this, 'settings_field_input'),
+						$marketplace_slug . '_marketplace_username',
+						$marketplace_data['name'] . ' ' . __( 'Username', 'a10e_av' ),
+						array( $this, 'settings_field_input' ),
 						$slug,
 						$slug,
 						array(
-							'id' 	=> $marketplace_slug . '_personal_token',
-							'desc' 	=> '<a href="' . esc_url( $marketplace_data['token_info'] ) . '" target="_blank">' . _( 'Generate a personal token' ) . '</a>'
+							'id'   => $marketplace_slug . '_marketplace_username',
+							'desc' => __( 'Case sensitive', 'a10e_av' )
 						)
 					);
-				} else {
-					add_settings_field(
-						$marketplace_slug . '_api_key',
-						$marketplace_data['name'] . ' ' .  __( 'API Key', 'a10e_av' ),
-						array($this, 'settings_field_input'),
-						$slug,
-						$slug,
-						array(
-							'id' 	=> $marketplace_slug . '_api_key',
-							'desc' 	=> __( 'More info about ', 'a10e' ) . '<a href="' . esc_url( $marketplace_data['api_info'] ) . '" target="_blank">' . $marketplace_data['name'] . ' ' . _( 'API') . '</a>'
-						)
-					);
+
+					// add option for themeforest - personal token
+					if ( 'envato' == $marketplace_slug ) {
+						add_settings_field(
+							$marketplace_slug . '_personal_token',
+							$marketplace_data['name'] . ' ' .  __( 'Personal Token', 'a10e_av' ),
+							array($this, 'settings_field_input'),
+							$slug,
+							$slug,
+							array(
+								'id' 	=> $marketplace_slug . '_personal_token',
+								'desc' 	=> '<a href="' . esc_url( $marketplace_data['token_info'] ) . '" target="_blank">' . __( 'Generate a personal token' ) . '</a>'
+							)
+						);
+					} else {
+						add_settings_field(
+							$marketplace_slug . '_api_key',
+							$marketplace_data['name'] . ' ' .  __( 'API Key', 'a10e_av' ),
+							array($this, 'settings_field_input'),
+							$slug,
+							$slug,
+							array(
+								'id' 	=> $marketplace_slug . '_api_key',
+								'desc' 	=> __( 'More info about ', 'a10e' ) . '<a href="' . esc_url( $marketplace_data['api_info'] ) . '" target="_blank">' . $marketplace_data['name'] . ' ' . __( 'API') . '</a>'
+							)
+						);
+					}
 				}
 
 				// Call actions attached to after_marketplace_fields
@@ -621,7 +630,7 @@ if(!class_exists('AQ_Verifier')) {
 				'headers' => array( 'Authorization' => 'Bearer ' . $personal_token )
 			);
 			$purchase_code 	= urlencode($purchase_code);
-			$api_url 		= sprintf( $this->apis[$marketplace]['url'], $author, $api_key, $purchase_code );
+			$api_url 		= sprintf( $this->apis[$marketplace]['url'], $author, $api_key, $purchase_code, $marketplace_username );
 			$verified 		= false;
 			$result 		= '';
 
@@ -689,8 +698,7 @@ if(!class_exists('AQ_Verifier')) {
 
 					break;
 
-				default:
-					//case 'envato' :
+				case 'envato' :
 
 					// Send request to marketplace to verify purchase
 					$response = wp_remote_get($api_url, $args);
@@ -723,6 +731,60 @@ if(!class_exists('AQ_Verifier')) {
 
 									$errors->add('unsupported_theme', sprintf( __( "Your theme support license has <strong>expired</strong> on <strong>%s</strong>!<br> To access the support forum, please <a href='%s' target='_blank'>extend your support license.</a>", 'a10e_av' ), date( get_option( 'date_format' ), strtotime( $supported_until ) ), @$result['item']['url'] ) );
 
+								}
+
+							}
+
+						} else {
+							// Tell user the purchase code is invalid
+							$errors->add('invalid_purchase_code', __( 'Sorry, but that item purchase code is invalid. Please make sure you have entered the correct purchase code.', 'a10e_av' ) );
+						}
+
+					} else {
+						$errors->add('server_error', __( 'Something went wrong, please try again.', 'a10e_av' ) );
+					}
+
+					if( $verified ) {
+						return $result;
+					} else {
+						return $errors;
+					}
+
+				default:
+
+					// Send request to marketplace to verify purchase
+					$response = wp_remote_get($api_url);
+
+					if( !is_wp_error($response) ) {
+
+						$result = json_decode( wp_remote_retrieve_body( $response ), true );
+						$license_exist = $result['success'];
+						$supported_until = $result['expires'];
+						$customer_email = $result['customer_email'];
+						$item_name = $result['item_name'];
+
+						if ( $license_exist ) {
+
+							// Check if username matches the one on marketplace
+							if( strcmp( $customer_email , $marketplace_username ) !== 0 && !$options['disable_username'] ) {
+								$errors->add('invalid_marketplace_username', __( 'That username is not valid for this item purchase code. Please make sure you entered the correct username (case sensitive).' ) );
+							} else {
+								// Check if purchased theme is supported
+								if ( ( date( get_option('date_format') ) <= strtotime($supported_until) ) || $options['disable_support_verification'] ) {
+
+									$this->theme_supported_message = sprintf( __( 'Your theme support license is <strong>valid</strong> until <strong>%s</strong>.', 'a10e_av' ), date( get_option( 'date_format' ), strtotime( $supported_until ) ) );
+
+									// add purchase code to $result
+									$result['purchase_code'] = $purchase_code;
+									$result['marketplace'] = $marketplace;
+									$result['marketplace_name'] = $this->apis[$marketplace]['name'];
+									//$result['verify-purchase']['buyer'] = $customer_email;
+									$result['item_name'] = $item_name;
+									$verified = true;
+
+								} else {
+									// Tell user the purchase code is invalid
+									$errors->add('unsupported_theme', sprintf( __( "Your theme support license has <strong>expired</strong> on <strong>%s</strong>!<br> To access the support forum, please <a href='%s' target='_blank'>extend your support license.</a>", 'a10e_av' ), date( get_option( 'date_format' ), strtotime( $supported_until ) ), @$result['item']['url'] ) );
 								}
 
 							}
