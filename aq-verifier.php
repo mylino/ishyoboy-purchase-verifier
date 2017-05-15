@@ -389,7 +389,7 @@ if(!class_exists('AQ_Verifier')) {
 				            	'purchase_code' => $verify['purchase_code'],
 				            	'marketplace' => $verify['marketplace'],
 				            	'marketplace_name' => $verify['marketplace_name'],
-				            	'supported_until' => $verify['supported_until']
+//				            	'supported_until' => $verify['supported_until']
 					            // TODO change help IMG url
 				            );
 
@@ -555,9 +555,9 @@ if(!class_exists('AQ_Verifier')) {
 					<?php if ( isset( $verified['purchase_code'] ) ) { ?>
 						<li><strong><?php echo __( 'Purchase Code', 'a10e_av' ) . ': '; ?></strong><?php echo $verified['purchase_code']; ?></li>
 					<?php }?>
-					<?php if ( isset( $verified['supported_until'] ) && !isset( $this->options['disable_support_verification'] ) ) { ?>
-						<li><strong><?php echo __( 'Supported Until', 'a10e_av' ) . ': '; ?></strong><?php echo  date( get_option( 'date_format' ), strtotime($verified['supported_until'] ) ); ?></li>
-					<?php }?>
+					<?php //if ( isset( $verified['supported_until'] ) && !isset( $this->options['disable_support_verification'] ) ) { ?>
+<!--						<li><strong>--><?php //echo __( 'Supported Until', 'a10e_av' ) . ': '; ?><!--</strong>--><?php //echo  date( get_option( 'date_format' ), strtotime($verified['supported_until'] ) ); ?><!--</li>-->
+					<?php //}?>
 					</ul>
 
 				</div>
@@ -709,7 +709,7 @@ if(!class_exists('AQ_Verifier')) {
 
 						$result = json_decode($response['body'], true);
 						$item = @$result['item']['name']; //@$result['verify-purchase']['item_name'];
-						$supported_until = @$result['supported_until']; //@$result['verify-purchase']['supported_until'];
+//						$supported_until = @$result['supported_until']; //@$result['verify-purchase']['supported_until'];
 
 						if ( $item ) {
 
@@ -718,9 +718,9 @@ if(!class_exists('AQ_Verifier')) {
 								$errors->add('invalid_marketplace_username', __( 'That username is not valid for this item purchase code. Please make sure you entered the correct username (case sensitive).', 'a10e_av' ) );
 							} else {
 								// Check if purchased theme is supported
-								if ( ( date( get_option('date_format') ) <= strtotime($supported_until) ) || $options['disable_support_verification'] ) {
+//								if ( ( date( get_option('date_format') ) <= strtotime($supported_until) ) || $options['disable_support_verification'] ) {
 
-									$this->theme_supported_message = sprintf( __( 'Your theme support license is <strong>valid</strong> until <strong>%s</strong>.', 'a10e_av' ), date( get_option( 'date_format' ), strtotime( $supported_until ) ) );
+//									$this->theme_supported_message = sprintf( __( 'Your theme support license is <strong>valid</strong> until <strong>%s</strong>.', 'a10e_av' ), date( get_option( 'date_format' ), strtotime( $supported_until ) ) );
 
 									// add purchase code to $result
 									$result['purchase_code'] = $purchase_code;
@@ -729,11 +729,11 @@ if(!class_exists('AQ_Verifier')) {
 									$result['item_name'] = @$result['item']['name'];
 									$verified = true;
 
-								} else {
-
-									$errors->add('unsupported_theme', sprintf( __( "Your theme support license has <strong>expired</strong> on <strong>%s</strong>!<br> To access the support forum, please <a href='%s' target='_blank'>extend your support license.</a>", 'a10e_av' ), date( get_option( 'date_format' ), strtotime( $supported_until ) ), @$result['item']['url'] ) );
-
-								}
+//								} else {
+//
+//									$errors->add('unsupported_theme', sprintf( __( "Your theme support license has <strong>expired</strong> on <strong>%s</strong>!<br> To access the support forum, please <a href='%s' target='_blank'>extend your support license.</a>", 'a10e_av' ), date( get_option( 'date_format' ), strtotime( $supported_until ) ), @$result['item']['url'] ) );
+//
+//								}
 
 							}
 
@@ -761,7 +761,7 @@ if(!class_exists('AQ_Verifier')) {
 
 						$result = json_decode( wp_remote_retrieve_body( $response ), true );
 						$license_exist = $result['success'];
-						$supported_until = $result['expires'];
+//						$supported_until = $result['expires'];
 						$customer_email = $result['customer_email'];
 						$item_name = $result['item_name'];
 
@@ -772,9 +772,9 @@ if(!class_exists('AQ_Verifier')) {
 								$errors->add('invalid_marketplace_username', __( 'That username is not valid for this item purchase code. Please make sure you entered the correct username (case sensitive).' ) );
 							} else {
 								// Check if purchased theme is supported
-								if ( ( date( get_option('date_format') ) <= strtotime($supported_until) ) || $options['disable_support_verification'] ) {
+//								if ( ( date( get_option('date_format') ) <= strtotime($supported_until) ) || $options['disable_support_verification'] ) {
 
-									$this->theme_supported_message = sprintf( __( 'Your theme support license is <strong>valid</strong> until <strong>%s</strong>.', 'a10e_av' ), date( get_option( 'date_format' ), strtotime( $supported_until ) ) );
+//									$this->theme_supported_message = sprintf( __( 'Your theme support license is <strong>valid</strong> until <strong>%s</strong>.', 'a10e_av' ), date( get_option( 'date_format' ), strtotime( $supported_until ) ) );
 
 									// add purchase code to $result
 									$result['purchase_code'] = $purchase_code;
@@ -782,13 +782,13 @@ if(!class_exists('AQ_Verifier')) {
 									$result['marketplace_name'] = $this->apis[$marketplace]['name'];
 									$result['buyer'] = $customer_email;
 									$result['item_name'] = $item_name;
-									$result['supported_until'] = $supported_until;
+//									$result['supported_until'] = $supported_until;
 									$verified = true;
 
-								} else {
-									// Tell user the purchase code is invalid
-									$errors->add('unsupported_theme', sprintf( __( "Your theme support license has <strong>expired</strong> on <strong>%s</strong>!<br> To access the support forum, please <a href='%s' target='_blank'>extend your support license.</a>", 'a10e_av' ), date( get_option( 'date_format' ), strtotime( $supported_until ) ), @$result['item']['url'] ) );
-								}
+//								} else {
+//									// Tell user the purchase code is invalid
+//									$errors->add('unsupported_theme', sprintf( __( "Your theme support license has <strong>expired</strong> on <strong>%s</strong>!<br> To access the support forum, please <a href='%s' target='_blank'>extend your support license.</a>", 'a10e_av' ), date( get_option( 'date_format' ), strtotime( $supported_until ) ), @$result['item']['url'] ) );
+//								}
 
 							}
 
