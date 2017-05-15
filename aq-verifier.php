@@ -393,7 +393,9 @@ if(!class_exists('AQ_Verifier')) {
 					            // TODO change help IMG url
 				            );
 
-							update_user_meta( $user_id, 'purchased_items', $items );
+							echo update_user_meta( $user_id, 'purchased_items', $items );
+
+							//update_user_meta( $user_id, 'purchased_items', $items );
 
 							$redirect_to = site_url( $this->loginfile_url() . 'checkemail=registered', 'login_post');
 							wp_safe_redirect( $redirect_to );
@@ -607,7 +609,7 @@ if(!class_exists('AQ_Verifier')) {
 
 			$errors = new WP_Error;
 			$options = $this->options;
-			
+
 			// Check for empty fields
 			if ( (empty($marketplace_username) && !$options['disable_username'] ) || empty($purchase_code) || empty($marketplace) ) {
 				$errors->add( 'incomplete_form', '<strong>' . __( 'Error', 'a10e_av' ) . '</strong>: '. __( 'Incomplete form fields.', 'a10e_av' ) );
@@ -778,8 +780,9 @@ if(!class_exists('AQ_Verifier')) {
 									$result['purchase_code'] = $purchase_code;
 									$result['marketplace'] = $marketplace;
 									$result['marketplace_name'] = $this->apis[$marketplace]['name'];
-									//$result['verify-purchase']['buyer'] = $customer_email;
+									$result['buyer'] = $customer_email;
 									$result['item_name'] = $item_name;
+									$result['supported_until'] = $supported_until;
 									$verified = true;
 
 								} else {
