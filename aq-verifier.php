@@ -288,8 +288,10 @@ if(!class_exists('AQ_Verifier')) {
 				$desc = $args['desc'];
 				$options = $this->options;
 
+				$attrChecked = ( isset( $options[ $id ] ) ) ? checked( $options[ $id ], 1, false ) : '';
+
 				echo '<label for="'. $id .'">';
-					echo '<input type="checkbox" id="'.$id.'" name="'. $slug .'['. $id .']" value="1" '. checked( $options[$id], 1, false ) .'/>';
+					echo '<input type="checkbox" id="'.$id.'" name="'. $slug .'['. $id .']" value="1" '. $attrChecked .'/>';
 				echo '&nbsp;' . $desc .'</label>';
 
 			}
