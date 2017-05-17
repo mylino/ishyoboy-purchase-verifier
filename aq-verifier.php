@@ -270,8 +270,8 @@ if(!class_exists('AQ_Verifier')) {
 				$id = $args['id'];
 				$desc = $args['desc'];
 				$options = $this->options;
-
-				$default = "#login {width: 500px} .success {background-color: #F0FFF8; border: 1px solid #CEEFE1;";
+				
+				$default = "#login { width: 600px; padding-top: 0; } #login h1 a { width: 100%; background: url('http://support.ishyoboy.com/assets/core/images/ishyoboy_theme_logo.png') center center no-repeat; padding: 75px 0; } .success {background-color: #F0FFF8; margin-top: 20px;} .message ul {padding-left: 16px;} .login #login_error {margin-top: 20px;}";
 
 				if(!isset($options['custom_style'])) $options['custom_style'] = $default;
 				$text = $options['custom_style'];
