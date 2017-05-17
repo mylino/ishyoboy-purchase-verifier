@@ -627,9 +627,9 @@ if(!class_exists('AQ_Verifier')) {
 			// Gets author data & prepare verification vars
 			$slug 			= $this->page;
 			$options 		= get_option($slug);
-			$author 		= $options[ $marketplace . '_marketplace_username' ];
-			$api_key		= $options[ $marketplace . '_api_key' ]; // mojomarket
-			$personal_token = $options[ $marketplace . '_personal_token' ]; // themeforest
+			$author 		= ( isset( $options[ $marketplace . '_marketplace_username' ] ) ) ? $options[ $marketplace . '_marketplace_username' ] : '';
+			$api_key		= ( isset( $options[ $marketplace . '_api_key' ] ) ) ? $options[ $marketplace . '_api_key' ] : ''; // mojomarket
+			$personal_token = ( isset( $options[ $marketplace . '_personal_token' ] ) ) ? $options[ $marketplace . '_personal_token' ] : ''; // themeforest
 			$args = array(
 				'headers' => array( 'Authorization' => 'Bearer ' . $personal_token )
 			);
