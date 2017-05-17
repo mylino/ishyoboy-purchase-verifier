@@ -66,7 +66,7 @@ if(!class_exists('AQ_Verifier')) {
 			$this->apis = Array(
 				'ishyoboyshop' =>  Array(
 					'name' => __( 'IshYoBoyShop', 'a10e_av' ),
-					'url' => 'http://mvdev.ishyoboy.com/iybweb/?edd_action=check_license&license=%3$s&email=%4$s', // http://YOURSITE.com/?edd_action=check_license&item_name=EDD+Product+Name&license=cc22c1ec86304b36883440e2e84cddff&url=http://licensedsite.com
+					'url' => 'http://ishyoboy.com/?edd_action=check_license&license=%3$s&email=%4$s', // http://YOURSITE.com/?edd_action=check_license&item_name=EDD+Product+Name&license=cc22c1ec86304b36883440e2e84cddff&url=http://licensedsite.com
 					'api_info' => 'http://docs.easydigitaldownloads.com/article/384-software-licensing-api',
 					'help_img' => plugin_dir_url( $file ) . 'img/ishyoboyshop-item-purchase-code.png' // should be placed in the rood of the theme
 					                                   				),
@@ -270,7 +270,7 @@ if(!class_exists('AQ_Verifier')) {
 				$id = $args['id'];
 				$desc = $args['desc'];
 				$options = $this->options;
-				
+
 				$default = "#login { width: 600px; padding-top: 0; } #login h1 a { width: 100%; background: url('http://support.ishyoboy.com/assets/core/images/ishyoboy_theme_logo.png') center center no-repeat; padding: 75px 0; } .success {background-color: #F0FFF8; margin-top: 20px;} .message ul {padding-left: 16px;} .login #login_error {margin-top: 20px;}";
 
 				if(!isset($options['custom_style'])) $options['custom_style'] = $default;
