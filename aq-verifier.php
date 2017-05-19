@@ -66,7 +66,8 @@ if(!class_exists('AQ_Verifier')) {
 			$this->apis = Array(
 				'ishyoboyshop' =>  Array(
 					'name' => __( 'IshYoBoyShop', 'a10e_av' ),
-					'url' => 'http://ishyoboy.com/?edd_action=check_license&license=%3$s&email=%4$s', // http://YOURSITE.com/?edd_action=check_license&item_name=EDD+Product+Name&license=cc22c1ec86304b36883440e2e84cddff&url=http://licensedsite.com
+					'url' => 'http://mvdev.ishyoboy.com/iybweb/?edd_action=check_license&license=%3$s&email=%4$s', // http://YOURSITE.com/?edd_action=check_license&item_name=EDD+Product+Name&license=cc22c1ec86304b36883440e2e84cddff&url=http://licensedsite.com
+					//'url' => 'http://ishyoboy.com/?edd_action=check_license&license=%3$s&email=%4$s', // http://YOURSITE.com/?edd_action=check_license&item_name=EDD+Product+Name&license=cc22c1ec86304b36883440e2e84cddff&url=http://licensedsite.com
 					'api_info' => 'http://docs.easydigitaldownloads.com/article/384-software-licensing-api',
 					'help_img' => plugin_dir_url( $file ) . 'img/ishyoboyshop-item-purchase-code.png' // should be placed in the rood of the theme
 					                                   				),
@@ -354,9 +355,11 @@ if(!class_exists('AQ_Verifier')) {
 
 			global $errors;
 			$http_post = ('POST' == $_SERVER['REQUEST_METHOD']);
+			// Get info about registering new license / purchase code
+			$new_license = ( isset( $_GET['new_license'] ) ) ? $_GET['new_license'] : false;
 
-			if($http_post) {
-				
+			if ( $http_post ) {
+
 				$action = $_POST['wp-submit'];
 				$marketplace_username = isset($_POST['marketplace_username']) ? esc_attr($_POST['marketplace_username']) : '';
 				$purchase_code = esc_attr($_POST['purchase_code']);
@@ -364,7 +367,25 @@ if(!class_exists('AQ_Verifier')) {
 
 				$verify = $this->verify_purchase($marketplace, $marketplace_username, $purchase_code);
 
-				if($action == 'Register') {
+				if(!is_wp_error($verify)) {
+					// Update user meta
+					$items                   = array();
+					$items[ $purchase_code ] = array(
+						'name'             => $verify['item_name'],
+						'id'               => $verify['item_id'],
+						'date'             => $verify['created_at'],
+						'buyer'            => $verify['buyer'],
+						'licence'          => $verify['licence'],
+						'purchase_code'    => $verify['purchase_code'],
+						'marketplace'      => $verify['marketplace'],
+						'marketplace_name' => $verify['marketplace_name'],
+						'supported_until'  => $verify['supported_until']
+						// TODO change help IMG url
+					);
+				}
+
+
+				if ( ( $action == 'Register' ) && !$new_license ) {
 
 					if(!is_wp_error($verify)) {
 
@@ -378,26 +399,9 @@ if(!class_exists('AQ_Verifier')) {
 
 							// Change role
 				            wp_update_user( array ('ID' => $user_id, 'role' => 'participant') ) ;
-				            
-				            // Update user meta
-				            $items = array();
 
-				            $items[$purchase_code] = array (
-				            	'name' => $verify['item_name'],
-				            	'id' => $verify['item_id'],
-				            	'date' => $verify['created_at'],
-				            	'buyer' => $verify['buyer'],
-				            	'licence' => $verify['licence'],
-				            	'purchase_code' => $verify['purchase_code'],
-				            	'marketplace' => $verify['marketplace'],
-				            	'marketplace_name' => $verify['marketplace_name'],
-//				            	'supported_until' => $verify['supported_until']
-					            // TODO change help IMG url
-				            );
 
-							echo update_user_meta( $user_id, 'purchased_items', $items );
-
-							//update_user_meta( $user_id, 'purchased_items', $items );
+							update_user_meta( $user_id, 'purchased_items', $items );
 
 							$redirect_to = site_url( $this->loginfile_url() . 'checkemail=registered', 'login_post');
 							wp_safe_redirect( $redirect_to );
@@ -409,31 +413,53 @@ if(!class_exists('AQ_Verifier')) {
 
 					} else {
 						// Force to resubmit verify form
-						$this->view_verification_form($verify);
+						$this->view_verification_form($verify, $new_license);
 					}
 					
 
-				} elseif($action == 'Verify') {
+				} else if ( $action == 'Verify' || $action == 'Verify and Update' ) {
 
 					// Verified, supply the registration form
-					if(!is_wp_error($verify)) {
+					if ( !is_wp_error( $verify ) ) {
 
-						// Purchase Item Info
-						$this->view_registration_form($errors, $verify);
+						if ( !$new_license ) {
+							// Purchase Item Info
+							$this->view_registration_form( $errors, $verify );
+						} else {
+
+							if ( is_user_logged_in() ) {
+
+								/* Update user meta | add new license */
+								$user_id = get_current_user_id();
+								$user_licenses = array();
+								$registered_licenses = get_user_meta( $user_id, 'purchased_items' );
+
+								// Add new license after existing
+								if ( !empty( $registered_licenses ) ) {
+									$user_licenses = $registered_licenses[0];
+									$user_licenses[0][] = $items;
+								} else {
+									$user_licenses[0][] = $items;
+								}
+
+								// Update data with new license
+								update_user_meta( $user_id, 'purchased_items', $user_licenses );
+
+								$redirect_to = get_home_url();
+								wp_safe_redirect( $redirect_to );
+								exit();
+							}
+						}
 
 					} else {
-						
 						// Force to resubmit verify form
-						$this->view_verification_form($verify);
-
-					}
+						$this->view_verification_form($verify, $new_license);
+	 				}
 
 				}
 
 			} else {
-
-				$this->view_verification_form();
-
+				$this->view_verification_form('', $new_license);
 			}
 
 			$this->custom_style();
@@ -453,7 +479,7 @@ if(!class_exists('AQ_Verifier')) {
 			return false;
 		}
 
-		function view_verification_form($errors = '') {
+		function view_verification_form( $errors = '', $new_license = false ) {
 
 			if ( empty($errors) ) {
 				$errors = new WP_Error;
@@ -468,17 +494,21 @@ if(!class_exists('AQ_Verifier')) {
 				}
 			}
 
-			if ( empty( $options ) ){
+			if ( empty( $options ) ) {
 				$errors->add( 'no_active_verification_method', '<strong>' . __( 'Error', 'a10e_av' ) . '</strong>: '. __( 'No active purchase verification method available! Please check settings.', 'a10e_av' ) );
 			}
 
+			if ( $new_license ) {
+				login_header( __( 'Verify New Purchase Form', 'a10e_av' ), '<p class="message register">' . __( 'Verify New Purchase', 'a10e_av' ) . '</p>', $errors );
+			} else {
+				login_header( __( 'Verify Purchase Form', 'a10e_av' ), '<p class="message register">' . __( 'Verify Purchase', 'a10e_av' ) . '</p>', $errors );
+			}
 
-
-			login_header(__( 'Verify Purchase Form', 'a10e_av' ), '<p class="message register">' . __( 'Verify Purchase', 'a10e_av' ) . '</p>', $errors);
+			$form_action = ( $new_license ) ? 'action=register&new_license=true' : 'action=register';
 
 			?>
 
-			<form name="registerform" id="registerform" action="<?php echo esc_url( site_url( $this->loginfile_url() . 'action=register', 'login_post') ); ?>" method="post">
+			<form name="registerform" id="registerform" action="<?php echo esc_url( site_url( $this->loginfile_url() . $form_action, 'login_post') ); ?>" method="post">
 				<p>
 					<?php
 
@@ -514,7 +544,7 @@ if(!class_exists('AQ_Verifier')) {
 					?>
 				</p>
 				<br class="clear" />
-				<p class="submit"><input type="submit" name="wp-submit" id="wp-submit" class="button button-primary button-large" value="<?php esc_attr_e('Verify'); ?>" tabindex="100" /></p>
+				<p class="submit"><input type="submit" name="wp-submit" id="wp-submit" class="button button-primary button-large" value="<?php if ( $new_license ) { esc_attr_e('Verify and Update'); } else { esc_attr_e('Verify'); } ?>" tabindex="100" /></p>
 			</form>
 
 			<?php
@@ -536,7 +566,7 @@ if(!class_exists('AQ_Verifier')) {
 			if($verified) {
 				?>
 				<?php if ( !isset( $this->options['disable_support_verification'] ) && '' != $this->theme_supported_message ) { ?>
-					<div class="message register">
+					<div class="message license-expire">
 						<p><?php echo $this->theme_supported_message; ?></p>
 					</div>
 				<?php }?>
@@ -557,9 +587,9 @@ if(!class_exists('AQ_Verifier')) {
 					<?php if ( isset( $verified['purchase_code'] ) ) { ?>
 						<li><strong><?php echo __( 'Purchase Code', 'a10e_av' ) . ': '; ?></strong><?php echo $verified['purchase_code']; ?></li>
 					<?php }?>
-					<?php //if ( isset( $verified['supported_until'] ) && !isset( $this->options['disable_support_verification'] ) ) { ?>
-<!--						<li><strong>--><?php //echo __( 'Supported Until', 'a10e_av' ) . ': '; ?><!--</strong>--><?php //echo  date( get_option( 'date_format' ), strtotime($verified['supported_until'] ) ); ?><!--</li>-->
-					<?php //}?>
+					<?php if ( isset( $verified['supported_until'] ) && !isset( $this->options['disable_support_verification'] ) ) { ?>
+						<li><strong><?php echo __( 'Supported Until', 'a10e_av' ) . ': '; ?></strong><?php echo  date( get_option( 'date_format' ), strtotime($verified['supported_until'] ) ); ?></li>
+					<?php }?>
 					</ul>
 
 				</div>
@@ -711,7 +741,7 @@ if(!class_exists('AQ_Verifier')) {
 
 						$result = json_decode($response['body'], true);
 						$item = @$result['item']['name']; //@$result['verify-purchase']['item_name'];
-//						$supported_until = @$result['supported_until']; //@$result['verify-purchase']['supported_until'];
+						$supported_until = @$result['supported_until']; //@$result['verify-purchase']['supported_until'];
 
 						if ( $item ) {
 
@@ -720,9 +750,9 @@ if(!class_exists('AQ_Verifier')) {
 								$errors->add('invalid_marketplace_username', __( 'That username is not valid for this item purchase code. Please make sure you entered the correct username (case sensitive).', 'a10e_av' ) );
 							} else {
 								// Check if purchased theme is supported
-//								if ( ( date( get_option('date_format') ) <= strtotime($supported_until) ) || $options['disable_support_verification'] ) {
+								if ( ( date( get_option('date_format') ) <= strtotime($supported_until) ) || $options['disable_support_verification'] ) {
 
-//									$this->theme_supported_message = sprintf( __( 'Your theme support license is <strong>valid</strong> until <strong>%s</strong>.', 'a10e_av' ), date( get_option( 'date_format' ), strtotime( $supported_until ) ) );
+									$this->theme_supported_message = sprintf( __( 'Your theme support license is <strong>valid</strong> until <strong>%s</strong>.', 'a10e_av' ), date( get_option( 'date_format' ), strtotime( $supported_until ) ) );
 
 									// add purchase code to $result
 									$result['purchase_code'] = $purchase_code;
@@ -731,11 +761,11 @@ if(!class_exists('AQ_Verifier')) {
 									$result['item_name'] = @$result['item']['name'];
 									$verified = true;
 
-//								} else {
-//
-//									$errors->add('unsupported_theme', sprintf( __( "Your theme support license has <strong>expired</strong> on <strong>%s</strong>!<br> To access the support forum, please <a href='%s' target='_blank'>extend your support license.</a>", 'a10e_av' ), date( get_option( 'date_format' ), strtotime( $supported_until ) ), @$result['item']['url'] ) );
-//
-//								}
+								} else {
+
+									$errors->add('unsupported_theme', sprintf( __( "Your theme support license has <strong>expired</strong> on <strong>%s</strong>!<br> To access the support forum, please <a href='%s' target='_blank'>extend your support license.</a>", 'a10e_av' ), date( get_option( 'date_format' ), strtotime( $supported_until ) ), @$result['item']['url'] ) );
+
+								}
 
 							}
 
@@ -763,7 +793,7 @@ if(!class_exists('AQ_Verifier')) {
 
 						$result = json_decode( wp_remote_retrieve_body( $response ), true );
 						$license_exist = $result['success'];
-//						$supported_until = $result['expires'];
+						$supported_until = $result['expires'];
 						$customer_email = $result['customer_email'];
 						$item_name = $result['item_name'];
 
@@ -774,9 +804,9 @@ if(!class_exists('AQ_Verifier')) {
 								$errors->add('invalid_marketplace_username', __( 'That username is not valid for this item purchase code. Please make sure you entered the correct username (case sensitive).' ) );
 							} else {
 								// Check if purchased theme is supported
-//								if ( ( date( get_option('date_format') ) <= strtotime($supported_until) ) || $options['disable_support_verification'] ) {
+								if ( ( date( get_option('date_format') ) <= strtotime($supported_until) ) || $options['disable_support_verification'] ) {
 
-//									$this->theme_supported_message = sprintf( __( 'Your theme support license is <strong>valid</strong> until <strong>%s</strong>.', 'a10e_av' ), date( get_option( 'date_format' ), strtotime( $supported_until ) ) );
+									$this->theme_supported_message = sprintf( __( 'Your theme support license is <strong>valid</strong> until <strong>%s</strong>.', 'a10e_av' ), date( get_option( 'date_format' ), strtotime( $supported_until ) ) );
 
 									// add purchase code to $result
 									$result['purchase_code'] = $purchase_code;
@@ -784,13 +814,13 @@ if(!class_exists('AQ_Verifier')) {
 									$result['marketplace_name'] = $this->apis[$marketplace]['name'];
 									$result['buyer'] = $customer_email;
 									$result['item_name'] = $item_name;
-//									$result['supported_until'] = $supported_until;
+									$result['supported_until'] = $supported_until;
 									$verified = true;
 
-//								} else {
-//									// Tell user the purchase code is invalid
-//									$errors->add('unsupported_theme', sprintf( __( "Your theme support license has <strong>expired</strong> on <strong>%s</strong>!<br> To access the support forum, please <a href='%s' target='_blank'>extend your support license.</a>", 'a10e_av' ), date( get_option( 'date_format' ), strtotime( $supported_until ) ), @$result['item']['url'] ) );
-//								}
+								} else {
+									// Tell user the purchase code is invalid
+									$errors->add('unsupported_theme', sprintf( __( "Your theme support license has <strong>expired</strong> on <strong>%s</strong>!<br> To access the support forum, please <a href='%s' target='_blank'>extend your support license.</a>", 'a10e_av' ), date( get_option( 'date_format' ), strtotime( $supported_until ) ), @$result['item']['url'] ) );
+								}
 
 							}
 
