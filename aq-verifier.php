@@ -437,15 +437,15 @@ if(!class_exists('AQ_Verifier')) {
 								// Add new license after existing
 								if ( !empty( $registered_licenses ) ) {
 									$user_licenses = $registered_licenses[0];
-									$user_licenses[0][] = $items;
+									$user_licenses[ key($items) ] = $items[ key($items) ];
 								} else {
-									$user_licenses[0][] = $items;
+									$user_licenses = $items;
 								}
 
 								// Update data with new license
 								update_user_meta( $user_id, 'purchased_items', $user_licenses );
 
-								$redirect_to = get_home_url();
+								$redirect_to = bbp_get_user_profile_edit_url( bbp_get_user_id('', false, true) ) . '#purchase-details';
 								wp_safe_redirect( $redirect_to );
 								exit();
 							}
@@ -589,7 +589,7 @@ if(!class_exists('AQ_Verifier')) {
 					<?php }?>
 					<?php if ( isset( $verified['supported_until'] ) && !isset( $this->options['disable_support_verification'] ) ) { ?>
 						<li><strong><?php echo __( 'Supported Until', 'a10e_av' ) . ': '; ?></strong><?php echo  date( get_option( 'date_format' ), strtotime($verified['supported_until'] ) ); ?></li>
-					<?php }?>
+					<?php } ?>
 					</ul>
 
 				</div>
@@ -783,6 +783,8 @@ if(!class_exists('AQ_Verifier')) {
 					} else {
 						return $errors;
 					}
+
+					break;
 
 				default:
 
