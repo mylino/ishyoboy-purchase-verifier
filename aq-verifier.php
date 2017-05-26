@@ -375,7 +375,7 @@ if(!class_exists('AQ_Verifier')) {
 						'id'               => $verify['item_id'],
 						'date'             => $verify['created_at'],
 						'buyer'            => $verify['buyer'],
-						'licence'          => $verify['licence'],
+						//'licence'          => $verify['licence'],
 						'purchase_code'    => $verify['purchase_code'],
 						'marketplace'      => $verify['marketplace'],
 						'marketplace_name' => $verify['marketplace_name'],
@@ -383,7 +383,6 @@ if(!class_exists('AQ_Verifier')) {
 						// TODO change help IMG url
 					);
 				}
-
 
 				if ( ( $action == 'Register' ) && !$new_license ) {
 
@@ -709,10 +708,10 @@ if(!class_exists('AQ_Verifier')) {
 							unset( $result['success']['purchase_date'] );
 
 							$result['success']['buyer'] = $marketplace_username;
-
 							$result['success']['licence'] = $result['success']['order_id'];
 							unset( $result['success']['order_id'] );
 
+							$result['success']['supported_until'] = date( "c", strtotime( "+6 month", strtotime( $result['success']['created_at'] ) ) );
 							$verified = true;
 
 						} else {
@@ -758,7 +757,9 @@ if(!class_exists('AQ_Verifier')) {
 									$result['purchase_code'] = $purchase_code;
 									$result['marketplace'] = $marketplace;
 									$result['marketplace_name'] = $this->apis[$marketplace]['name'];
+									$result['item_id'] = @$result['item']['id'];
 									$result['item_name'] = @$result['item']['name'];
+									$result['created_at'] = @$result['sold_at'];
 									$verified = true;
 
 								} else {
@@ -817,6 +818,7 @@ if(!class_exists('AQ_Verifier')) {
 									$result['buyer'] = $customer_email;
 									$result['item_name'] = $item_name;
 									$result['supported_until'] = $supported_until;
+									$result['created_at'] = date( "c", strtotime( "-1 year", strtotime( $supported_until ) ) );
 									$verified = true;
 
 								} else {
