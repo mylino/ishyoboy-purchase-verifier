@@ -807,7 +807,7 @@ if(!class_exists('AQ_Verifier')) {
 								$errors->add('invalid_marketplace_username', __( 'That username is not valid for this item purchase code. Please make sure you entered the correct username (case sensitive).' ) );
 							} else {
 								// Check if purchased theme is supported
-								if ( ( date( get_option('date_format') ) <= strtotime($supported_until) ) || $options['disable_support_verification'] ) {
+								if ( ( date( get_option('date_format') ) <= strtotime($supported_until) ) || 'lifetime' == $supported_until || $options['disable_support_verification'] ) {
 
 									$this->theme_supported_message = sprintf( __( 'Your theme support license is <strong>valid</strong> until <strong>%s</strong>.', 'a10e_av' ), date( get_option( 'date_format' ), strtotime( $supported_until ) ) );
 
