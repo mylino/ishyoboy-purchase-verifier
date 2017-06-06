@@ -379,7 +379,8 @@ if(!class_exists('AQ_Verifier')) {
 						'purchase_code'    => $verify['purchase_code'],
 						'marketplace'      => $verify['marketplace'],
 						'marketplace_name' => $verify['marketplace_name'],
-						'supported_until'  => $verify['supported_until']
+						'supported_until'  => $verify['supported_until'],
+						'date_of_update'   => date( "c" )
 						// TODO change help IMG url
 					);
 				}
