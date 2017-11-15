@@ -383,6 +383,11 @@ if(!class_exists('AQ_Verifier')) {
 						'date_of_update'   => date( "c" )
 						// TODO change help IMG url
 					);
+
+					// Check if theme bundle was purchased and add array of bundled themes.
+					if ( isset( $verify['bundled_themes'] ) ) {
+						$items[ $purchase_code ]['bundled_themes'] = $verify['bundled_themes'];
+					}
 				}
 
 				if ( ( $action == 'Register' ) && !$new_license ) {
@@ -801,6 +806,11 @@ if(!class_exists('AQ_Verifier')) {
 						$customer_email = $result['customer_email'];
 						$item_name = $result['item_name'];
 
+						// Check if theme bundle was purchased and set array of bundled themes.
+						if ( isset( $result['is_bundle'] ) && isset( $result['bundled_themes'] ) && $result['is_bundle'] ) {
+							$bundled_themes = $result['bundled_themes'];
+						}
+
 						if ( $license_exist ) {
 
 							// Check if username matches the one on marketplace
@@ -820,6 +830,12 @@ if(!class_exists('AQ_Verifier')) {
 									$result['item_name'] = $item_name;
 									$result['supported_until'] = $supported_until;
 									$result['created_at'] = date( "c", strtotime( "-1 year", strtotime( $supported_until ) ) );
+
+									// Add array of bundled themes if theme bundle was purchased.
+									if ( isset( $bundled_themes ) ) {
+										$result['bundled_themes'] = $bundled_themes;
+									}
+
 									$verified = true;
 
 								} else {
